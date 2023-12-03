@@ -1,56 +1,106 @@
 const { execSync } = require('child_process');
 const path = require('path');
-const yaml = require('js-yaml');
-const fs = require('fs');
 
 describe('gendiff', () => {
   const getFixturePath = (filename) => path.join(__dirname, '..', '__fixtures__', filename);
-  const getFileFormat = (filename) => {
-    return filename.endsWith('.yaml') || filename.endsWith('.yml') ? 'yaml' : 'json';
-  }
-  const yamlToJson = (filepath) => {
-    try {
-      const fileContents = fs.readFileSync(filepath, 'utf8');
-      return yaml.load(fileContents);
-    } catch (error) {
-      console.log(error);
-      return null;
-    }
-  }
-  const runGendiff = (filename1, filename2) => {
-    const format1 = getFileFormat(filename1);
-    const format2 = getFileFormat(filename2);
 
+  const runGendiff = (filename1, filename2, format = '') => {
     const filepath1 = getFixturePath(filename1);
     const filepath2 = getFixturePath(filename2);
+    const formatOption = format ? `--format ${format}` : '';
 
-    const file1 = format1 === 'yaml' ? yamlToJson(filepath1) : require(filepath1);
-    const file2 = format2 === 'yaml' ? yamlToJson(filepath2) : require(filepath2);
-
-    return execSync(`node ./gendiff.js ${file1} ${file2}`).toString();
+    return execSync(`node ./gendiff.js ${formatOption} ${filepath1} ${filepath2}`).toString();
   };
 
+  // Тесты для JSON
   test('compares two flat JSON files with no differences', () => {
     const result = runGendiff('file1.json', 'file1.json');
     expect(result).toBe(`{
-   follow: false
-   host: hexlet.io
-   proxy: 123.234.53.22
-   timeout: 50
-}\n`);
+     host: "hexlet.io"
+     timeout: 50
+     proxy: "123.234.53.22"
+     follow: false
+}
+`);
   });
-
 
   test('compares two flat JSON files with differences', () => {
     const result = runGendiff('file1.json', 'file2.json');
     expect(result).toBe(`{
- - follow: false
-   host: hexlet.io
- - proxy: 123.234.53.22
- - timeout: 50
- + timeout: 20
- + verbose: true
-}\n`);
+     host: "hexlet.io"
+   - timeout: 50
+   + timeout: 20
+   - proxy: "123.234.53.22"
+   - follow: false
+   + verbose: true
+}
+`);
   });
 
+  // Тесты для YAML
+  test('compares two flat YAML files with no differences', () => {
+    const result = runGendiff('file1.yml', 'file1.yml');
+    const expectedOutput = `{
+     host: "hexlet.io"
+     timeout: 50
+     proxy: "123.234.53.22"
+     follow: false
+}
+`
+    expect(result).toBe(expectedOutput);
+  });
+
+  test('compares two flat YAML files with differences', () => {
+    const result = runGendiff('file1.yml', 'file2.yml');
+    const expectedOutput = `{
+     host: "hexlet.io"
+   - timeout: 50
+   + timeout: 20
+   - proxy: "123.234.53.22"
+   - follow: false
+   + verbose: true
+}
+`
+    expect(result).toBe(expectedOutput);
+  });
+
+  // Тесты для разных форматов вывода
+  test('compares two files with plain format output', () => {
+    const result = runGendiff('file1.json', 'file2.json', 'plain');
+    const expectedOutput = `Property 'timeout' was updated. From 50 to 20
+Property 'proxy' was removed
+Property 'follow' was removed
+Property 'verbose' was added with value: true
+`
+    expect(result).toBe(expectedOutput);
+  });
+
+  test('compares two files with json format output', () => {
+    const result = runGendiff('file1.json', 'file2.json', 'json');
+    const expectedOutput = `{
+  "host": {
+    "status": "unchanged",
+    "value": "hexlet.io"
+  },
+  "timeout": {
+    "status": "updated",
+    "oldValue": 50,
+    "newValue": 20
+  },
+  "proxy": {
+    "status": "removed",
+    "oldValue": "123.234.53.22"
+  },
+  "follow": {
+    "status": "removed",
+    "oldValue": false
+  },
+  "verbose": {
+    "status": "added",
+    "newValue": true
+  }
+}
+`
+    expect(result).toBe(expectedOutput);
+  });
 });
