@@ -111,10 +111,12 @@ program
     }
   });
 
-function run(args) {
-  program.parse(args);
+function run(args = []) {
+  // Ensure args is always an array
+  program.parse(Array.isArray(args) ? args : [args]);
   return program;
 }
+
 
 if (require.main === module) {
   run(process.argv.slice(2));
