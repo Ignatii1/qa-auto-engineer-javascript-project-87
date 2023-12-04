@@ -114,3 +114,5 @@ program
 if (require.main === module) {
   program.parse(process.argv);
 }
+
+export default program;
