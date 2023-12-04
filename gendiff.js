@@ -112,11 +112,13 @@ program
   });
 
 function run(args = []) {
-  // Ensure args is always an array
-  program.parse(Array.isArray(args) ? args : [args]);
+  if (!Array.isArray(args) || args.length < 2) {
+    console.error("Missing required arguments 'filepath1' and 'filepath2'");
+    return;
+  }
+  program.parse(args);
   return program;
 }
-
 
 if (require.main === module) {
   run(process.argv.slice(2));
