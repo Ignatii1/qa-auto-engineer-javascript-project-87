@@ -113,6 +113,6 @@ program
 
 if (require.main === module) {
   program.parse(process.argv);
-} else {
-  module.exports = program;
 }
+module.exports = program;
+
