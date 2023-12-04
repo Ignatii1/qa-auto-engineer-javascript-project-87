@@ -111,8 +111,13 @@ program
     }
   });
 
-if (require.main === module) {
-  program.parse(process.argv);
+function run(args) {
+  program.parse(args);
+  return program;
 }
-module.exports = program;
 
+if (require.main === module) {
+  run(process.argv.slice(2));
+} else {
+  module.exports = run;
+}
