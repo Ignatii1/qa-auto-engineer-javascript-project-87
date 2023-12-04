@@ -111,17 +111,26 @@ program
     }
   });
 
-function run(args = []) {
-  if (!Array.isArray(args) || args.length < 2) {
-    console.error("Missing required arguments 'filepath1' and 'filepath2'");
-    return;
-  }
+function run(filepath1, filepath2, format = 'stylish') {
+  // Correct the order of arguments
+  const args = ['node', 'gendiff.js', filepath1, filepath2, '--format', format];
+
+  let output = '';
+  program.configureOutput({
+    writeOut: (str) => output += str,
+    writeErr: (str) => output += str,
+  });
+
   program.parse(args);
-  return program;
+
+  return output.trim();
 }
 
 if (require.main === module) {
-  run(process.argv.slice(2));
-} else {
-  module.exports = run;
+  // Extract format argument only if it is provided
+  const formatArgIndex = process.argv.findIndex(arg => arg.startsWith('--format'));
+  const format = formatArgIndex !== -1 ? process.argv[formatArgIndex + 1] : 'stylish';
+
+  // Call run with the appropriate arguments
+  run(process.argv[2], process.argv[3], format);
 }
